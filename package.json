@@ -1,0 +1,25 @@
+{
+  "name": "the-campbell-network",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/campbefs/the-campbell-network.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/campbefs/the-campbell-network/issues"
+  },
+  "homepage": "https://github.com/campbefs/the-campbell-network#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.12.13",
+    "validator": "^13.6.0"
+  }
+}
