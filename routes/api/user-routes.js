@@ -11,6 +11,8 @@ const {
 
 
 // Route Directory Routes
+// api/users/
+
 router
   .route('/')
   .get(getAllUsers)

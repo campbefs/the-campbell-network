@@ -5,8 +5,12 @@ const userController = {
   // get all users
   getAllUsers(req, res) {
     User.find({})
+      // .populate({
+      //   path: 'thoughts',
+      //   select: '-__v'
+      // })
       .populate({
-        path: 'thoughts',
+        path:'friends',
         select: '-__v'
       })
       .select('-__v')
@@ -19,10 +23,15 @@ const userController = {
   },
 
   // get one user by id
+  // localhost:3001/api/users/:id
   getUserById({ params }, res) {
     User.findOne({ _id: params.id })
       .populate({
         path: 'thoughts',
+        select: '-__v'
+      })
+      .populate({
+        path:'thoughts',
         select: '-__v'
       })
       .select('-__v')
@@ -41,7 +50,7 @@ const userController = {
 
   // create new user
   createUser({ body }, res) {
-    User.create(body)
+    User.create(body) // username, email, thoughts (optional), friends (optional)
       .then(dbUserData => res.json(dbUserData))
       .catch(err => res.status(400).json(err));
   },
@@ -76,86 +85,122 @@ const userController = {
   //    /api/users/:userId/friends/:friendId
 
   addUserFriend({ params }, res) {
-    User.findOne({ _id: params.userId })
-      .populate({
-        path: 'thoughts',
-        select: '-__v'
-      })
+
+    if (params.friendId === params.userId) {
+      res.status(404).json( { message: 'Friend ID must be different from User ID'})
+      return;
+    }
+
+    // find user in database
+    User.findOne({ _id: params.friendId })
       .select('-__v')
-      .then(dbUserData => {
-        if (!dbUserData) {
-          res.status(404).json( {message: 'No user found with this id!'});
+      .then(dbFriendData => {
+        // if no userid exists send 404
+        if (!dbFriendData) {
+          res.status(404).json( {message: 'No friend found with this id!'});
           return;
         }
 
-        User.findOne({ _id: params.friendId })
-        .populate({
-          path: 'thoughts',
-          select: '-__v'
-        })
-        .select('-__v')
-        .then(dbFriendData => {
-          if (!dbFriendData) {
-            res.status(404).json( {message: 'No friend found with this id!'});
-            return;
+        // friend already exists begin logic
+        User.findOne({ 
+          _id: params.userId, 
+          friends: {
+            $in:[params.friendId]
           }
-
-          return User.findOneAndUpdate(
-            { _id: params.userId }, // find the user
-            { $push: { friends: params.friendId }}, // add friend
-            { new: true } // return doc after update was applied
-          );
-
         })
-        .catch(err => {
-          console.log(err);
-          res.status(400).json(err);
-        });
+          .select('-__v')
+          .then(dbUserData => {
+            // IF RESULT IS RETURNED FROM USERID+FRIEND COMBO THEN 404
+            if (dbUserData) {
+              res.status(404).json({message: 'User already has that friend'});
+              return;
+            }
+
+            // UPDATE
+            User.findOneAndUpdate(
+              { _id: params.userId }, // find the user
+              { $push: { friends: params.friendId }}, // add friend
+              { new: true } // return doc after update was applied
+            )
+              .then(dbUpdateData => {
+                if (!dbUpdateData) {
+                  return res.status(404).json({ message: 'No User found with this ID!'})
+                }
+                res.json(dbUpdateData);
+              })
+              .catch(err => {
+                console.log(err);
+                res.status(500).json(err);
+              });    
+
+          })
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json(err);
       })
   },
+
 
   // delete to remove a friend from a user's friend list
   //    /api/users/:userId/friends/:friendId
 
   deleteUserFriend({ params }, res) {
-    User.findOne({ _id: params.userId })
-      .populate({
-        path: 'thoughts',
-        select: '-__v'
-      })
+
+    if (params.friendId === params.userId) {
+      res.status(404).json( { message: 'Friend ID must be different from User ID'})
+      return;
+    }
+
+    // find user in database
+    User.findOne({ _id: params.friendId })
       .select('-__v')
-      .then(dbUserData => {
-        if (!dbUserData) {
-          res.status(404).json( {message: 'No user found with this id!'});
+      .then(dbFriendData => {
+        // database - if no friend userid exists send 404
+        if (!dbFriendData) {
+          res.status(404).json( {message: 'No friend found in database with this id!'});
           return;
         }
 
-        User.findOne({ _id: params.friendId })
-        .populate({
-          path: 'thoughts',
-          select: '-__v'
-        })
-        .select('-__v')
-        .then(dbFriendData => {
-          if (!dbFriendData) {
-            res.status(404).json( {message: 'No friend found with this id!'});
-            return;
+        // friend doesn't exist in list - begin logic
+        User.findOne({ 
+          _id: params.userId, 
+          friends: {
+            $in:[params.friendId]
           }
-
-          return User.findOneAndUpdate(
-            { _id: params.userId }, // find the user
-            { $pull: { friends: params.friendId }}, // remove friend
-            { new: true } // return doc after update was applied
-          );
-
         })
-        .catch(err => {
-          console.log(err);
-          res.status(400).json(err);
-        });
+          .select('-__v')
+          .then(dbUserData => {
+            // friendslist- IF NO RESULT IS RETURNED FROM USERID+FRIEND COMBO THEN 404
+            if (!dbUserData) {
+              res.status(404).json({message: 'No friend found in friendslist with that id'});
+              return;
+            }
+
+            // UPDATE
+            User.findOneAndUpdate(
+              { _id: params.userId }, // find the user
+              { $pull: { friends: params.friendId }}, // remove friend
+              { new: true } // return doc after update was applied
+            )
+              .then(dbUpdateData => {
+                if (!dbUpdateData) {
+                  return res.status(404).json({ message: 'No User found with this ID!'})
+                }
+                res.json(dbUpdateData);
+              })
+              .catch(err => {
+                console.log(err);
+                res.status(500).json(err);
+              });    
+
+          })
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json(err);
       })
   },
-
 
 }
 
