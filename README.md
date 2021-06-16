@@ -37,5 +37,8 @@
   ## License
   This application is covered under the following license: [Creative Commons (CC0)](http://creativecommons.org/publicdomain/zero/1.0/)
 
+  ## Link to Walkthrough Video
+  https://drive.google.com/file/d/17Jpn0iylYvYw7BqdaEUkZbyHPic11qTT/view
+  
   ## Live Application Snapshot
   ![alt text](./assets/images/screenshot.JPG 'Live Application Screenshot')
