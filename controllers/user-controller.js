@@ -5,10 +5,10 @@ const userController = {
   // get all users
   getAllUsers(req, res) {
     User.find({})
-      // .populate({
-      //   path: 'thoughts',
-      //   select: '-__v'
-      // })
+      .populate({
+        path: 'thoughts',
+        select: '-__v'
+      })
       .populate({
         path:'friends',
         select: '-__v'
@@ -31,7 +31,7 @@ const userController = {
         select: '-__v'
       })
       .populate({
-        path:'thoughts',
+        path:'friends',
         select: '-__v'
       })
       .select('-__v')
@@ -49,6 +49,7 @@ const userController = {
   },
 
   // create new user
+  // body fields: username, email, thoughts (optional), friends (optional)
   createUser({ body }, res) {
     User.create(body) // username, email, thoughts (optional), friends (optional)
       .then(dbUserData => res.json(dbUserData))
